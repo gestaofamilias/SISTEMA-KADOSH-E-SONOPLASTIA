@@ -164,3 +164,14 @@ export async function saveScheduleMessage(scheduleId: string, message: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/escalas/${scheduleId}`);
 }
+
+export async function updateTechnicalNotes(scheduleId: string, notes: string | null) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("schedules")
+    .update({ technical_notes: notes })
+    .eq("id", scheduleId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/escalas/${scheduleId}`);
+  revalidatePath("/sonoplastia");
+}

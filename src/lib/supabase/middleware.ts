@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login"];
+// "/api/n8n" é chamado pelo n8n sem sessão Supabase; protegido por header secreto na própria rota.
+const PUBLIC_PATHS = ["/login", "/api/n8n"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

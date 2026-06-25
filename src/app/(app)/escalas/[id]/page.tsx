@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
+import { TechnicalNotesForm } from "@/app/(app)/sonoplastia/_components/technical-notes-form";
+import { ChecklistForm } from "@/app/(app)/sonoplastia/_components/checklist-form";
+import { TechnicalMessagePanel } from "@/app/(app)/sonoplastia/_components/technical-message-panel";
 import { WeeklySongsBlock } from "@/components/songs/weekly-songs-block";
 import type { ScheduleMember, TeamMember } from "@/lib/database.types";
-import { formatDateBadge, formatTime, type ScheduleMessageData } from "@/lib/utils";
+import { formatDateBadge, formatTime, type ScheduleMessageData, type TechnicalScheduleMessageData } from "@/lib/utils";
 import { ScheduleHeader } from "../_components/schedule-header";
 import { RoleSlot } from "../_components/role-slot";
 import { MessagePanel } from "../_components/message-panel";
@@ -29,6 +32,11 @@ export default async function EscalaDetailPage({ params }: { params: Promise<{ i
     .select("*, team_members(full_name)")
     .eq("event_id", event.id)
     .order("song_order");
+  const { data: technicalChecklist } = await supabase
+    .from("technical_checklists")
+    .select("*")
+    .eq("schedule_id", id)
+    .maybeSingle();
 
   const singers = members.filter((m) => m.role === "Cantor");
   const musicians = members.filter((m) => m.role === "Músico");
@@ -36,6 +44,20 @@ export default async function EscalaDetailPage({ params }: { params: Promise<{ i
   const datashowTechs = members.filter((m) => m.role === "Datashow");
   const soundTech = soundTechs[0];
   const datashowTech = datashowTechs[0];
+
+  const technicalMessageData: TechnicalScheduleMessageData = {
+    eventName: event.name,
+    dateLabel: formatDateBadge(event.event_date),
+    timeLabel: formatTime(event.event_time),
+    soundTech: soundTech?.team_members.full_name ?? null,
+    datashowTech: datashowTech?.team_members.full_name ?? null,
+    songs: (songs ?? []).map((s) => ({
+      order: s.song_order,
+      name: s.song_name,
+      keyTone: s.key_tone,
+    })),
+    technicalNotes: schedule.technical_notes,
+  };
 
   const messageData: ScheduleMessageData = {
     eventName: event.name,
@@ -100,6 +122,7 @@ export default async function EscalaDetailPage({ params }: { params: Promise<{ i
             detailField={null}
             members={soundTechs}
             allTeamMembers={teamMembers ?? []}
+            allScheduleMembers={members}
           />
           <RoleSlot
             scheduleId={id}
@@ -108,8 +131,19 @@ export default async function EscalaDetailPage({ params }: { params: Promise<{ i
             detailField={null}
             members={datashowTechs}
             allTeamMembers={teamMembers ?? []}
+            allScheduleMembers={members}
           />
         </div>
+        <hr className="border-kadosh-burnt/10" />
+        <TechnicalNotesForm scheduleId={id} initialNotes={schedule.technical_notes} />
+        <hr className="border-kadosh-burnt/10" />
+        <ChecklistForm scheduleId={id} eventId={event.id} checklist={technicalChecklist ?? null} />
+        <hr className="border-kadosh-burnt/10" />
+        <TechnicalMessagePanel
+          scheduleId={id}
+          messageData={technicalMessageData}
+          n8nSent={schedule.confirmation_requested}
+        />
       </div>
 
       <div className="kadosh-card p-5">

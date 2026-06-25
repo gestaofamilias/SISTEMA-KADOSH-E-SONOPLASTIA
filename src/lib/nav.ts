@@ -10,6 +10,7 @@ export interface NavItem {
     | "CalendarDays"
     | "ClipboardList"
     | "Music2"
+    | "AudioLines"
     | "History"
     | "Workflow"
     | "Settings";
@@ -22,6 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/cultos", label: "Cultos da Semana", icon: "CalendarDays", permission: "cultos" },
   { href: "/escalas", label: "Escalas", icon: "ClipboardList", permission: "escalas" },
   { href: "/hinos-da-semana", label: "Hinos da Semana", icon: "Music2", permission: "hinos" },
+  { href: "/sonoplastia", label: "Sonoplastia", icon: "AudioLines", permission: "sonoplastia" },
   { href: "/historico", label: "Histórico", icon: "History", permission: "historico" },
   { href: "/automacoes", label: "Automações", icon: "Workflow", permission: "automacoes" },
   { href: "/configuracoes", label: "Configurações", icon: "Settings", permission: "configuracoes" },

@@ -1,4 +1,5 @@
 import type {
+  ChecklistStatus,
   ConfirmationStatus,
   EventStatus,
   EventType,
@@ -78,10 +79,17 @@ export const PRESENCE_STATUSES: PresenceStatus[] = ["Pendente", "Presente", "Aus
 
 export const USER_ROLES: UserRole[] = ["Administrador", "Líder Kadosh", "Operador"];
 
+export const CHECKLIST_STATUSES: ChecklistStatus[] = [
+  "Pendente",
+  "Em andamento",
+  "Concluído",
+  "Com problema",
+];
+
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  Administrador: ["equipe", "cultos", "escalas", "hinos", "historico", "automacoes", "configuracoes"],
-  "Líder Kadosh": ["equipe", "cultos", "escalas", "hinos", "historico"],
-  Operador: ["escalas", "hinos"],
+  Administrador: ["equipe", "cultos", "escalas", "hinos", "sonoplastia", "historico", "automacoes", "configuracoes"],
+  "Líder Kadosh": ["equipe", "cultos", "escalas", "hinos", "sonoplastia", "historico"],
+  Operador: ["escalas", "hinos", "sonoplastia"],
 };
 
 export const STATUS_COLORS: Record<string, string> = {
@@ -110,6 +118,9 @@ export const STATUS_COLORS: Record<string, string> = {
   Erro: "border-red-500/40 bg-red-500/10 text-red-400",
   // substituído / neutro
   Substituído: "border-kadosh-beige-mid/40 bg-kadosh-beige-mid/10 text-kadosh-beige-mid",
+  // checklist técnico
+  "Em andamento": "border-kadosh-fire/40 bg-kadosh-fire/10 text-kadosh-fire",
+  "Com problema": "border-red-500/40 bg-red-500/10 text-red-400",
 };
 
 export const ROLE_ICON_NAME: Record<MainRole, string> = {

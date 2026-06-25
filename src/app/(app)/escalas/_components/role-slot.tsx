@@ -16,6 +16,7 @@ export function RoleSlot({
   detailField,
   members,
   allTeamMembers,
+  allScheduleMembers,
 }: {
   scheduleId: string;
   role: MainRole;
@@ -23,6 +24,9 @@ export function RoleSlot({
   detailField: "voice_type" | "instrument" | null;
   members: ScheduleMemberWithTeam[];
   allTeamMembers: TeamMember[];
+  /** Todos os membros já escalados (em qualquer função) nesta escala — usado apenas
+   *  para o aviso não-bloqueante "já está escalado em outra função". Opcional. */
+  allScheduleMembers?: ScheduleMemberWithTeam[];
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +43,16 @@ export function RoleSlot({
       ),
     [allTeamMembers, role, alreadyAddedIds]
   );
+
+  const otherRoleByMemberId = useMemo(() => {
+    const map = new Map<string, string>();
+    (allScheduleMembers ?? []).forEach((m) => {
+      if (m.role !== role) map.set(m.member_id, m.role);
+    });
+    return map;
+  }, [allScheduleMembers, role]);
+
+  const selectedAlreadyInOtherRole = selectedMember ? otherRoleByMemberId.get(selectedMember) : undefined;
 
   function handleAdd() {
     if (!selectedMember) return;
@@ -115,6 +129,11 @@ export function RoleSlot({
           Adicionar
         </button>
       </div>
+      {selectedAlreadyInOtherRole && (
+        <p className="text-xs text-kadosh-fire">
+          ⚠️ Esta pessoa já está escalada em outra função ({selectedAlreadyInOtherRole}) neste culto.
+        </p>
+      )}
       {error && <p className="text-xs text-red-400">{error}</p>}
       {eligible.length === 0 && members.length === 0 && (
         <p className="text-xs text-kadosh-beige-mid/50">

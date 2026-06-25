@@ -7,75 +7,22 @@ import {
   ListMusic,
   Music2,
   Plus,
+  Sliders,
   Sparkles,
   UserPlus,
   Users,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 import { BirthdayList } from "@/components/birthdays/birthday-list";
-import { getCurrentWeekRange } from "@/lib/utils";
-import type { ScheduleMember, TeamMember, WorshipEvent } from "@/lib/database.types";
+import type { TeamMember, WorshipEvent } from "@/lib/database.types";
+import { getWeekScheduleData } from "@/lib/queries";
 import { StatCard } from "./_components/stat-card";
-import { WeekEventCard, type WeekEventData } from "./_components/week-event-card";
+import { WeekEventCard } from "./_components/week-event-card";
 
 const WEEKLY_ORDER = ["Quinta-feira", "Sábado", "Domingo"];
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { start, end } = getCurrentWeekRange();
-  const startIso = start.toISOString().slice(0, 10);
-  const endIso = end.toISOString().slice(0, 10);
-
-  const [
-    { data: members },
-    { data: weekEvents },
-    { count: totalEvents },
-    { data: latestSchedule },
-  ] = await Promise.all([
-    supabase.from("team_members").select("*"),
-    supabase
-      .from("worship_events")
-      .select("*")
-      .gte("event_date", startIso)
-      .lte("event_date", endIso)
-      .order("event_date", { ascending: true }),
-    supabase.from("worship_events").select("*", { count: "exact", head: true }),
-    supabase
-      .from("schedules")
-      .select("*, worship_events(*)")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
-
-  const weeklyEvents = (weekEvents ?? []).filter((e) => WEEKLY_ORDER.includes(e.weekday ?? ""));
-  const weeklyEventIds = weeklyEvents.map((e) => e.id);
-
-  const [{ data: weekSchedules }, { data: weekSongs }] = await Promise.all([
-    weeklyEventIds.length
-      ? supabase
-          .from("schedules")
-          .select("*, schedule_members(*, team_members(*))")
-          .in("event_id", weeklyEventIds)
-      : Promise.resolve({ data: [] }),
-    weeklyEventIds.length
-      ? supabase.from("weekly_songs").select("id, event_id").in("event_id", weeklyEventIds)
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const weekData: WeekEventData[] = weeklyEvents
-    .sort((a, b) => WEEKLY_ORDER.indexOf(a.weekday!) - WEEKLY_ORDER.indexOf(b.weekday!))
-    .map((event) => {
-      const schedule = (weekSchedules ?? []).find((s) => s.event_id === event.id);
-      return {
-        event,
-        scheduleId: schedule?.id ?? null,
-        scheduleStatus: schedule?.status ?? null,
-        members: (schedule?.schedule_members ?? []) as Array<ScheduleMember & { team_members: TeamMember }>,
-        songCount: (weekSongs ?? []).filter((s) => s.event_id === event.id).length,
-      };
-    });
+  const { weekData, members, totalEvents, latestSchedule } = await getWeekScheduleData();
 
   const totalScaledThisWeek = weekData.reduce((sum, d) => sum + d.members.length, 0);
   const pendingConfirmations = weekData.reduce(
@@ -93,7 +40,19 @@ export default async function DashboardPage() {
         ? "Semana em montagem"
         : "Escalas pendentes de criação";
 
-  const allMembers = (members ?? []) as TeamMember[];
+  const totalTechnicalChecklists = weekData.filter((d) => d.scheduleId).length;
+  const completedTechnicalChecklists = weekData.filter(
+    (d) => d.technicalChecklist?.status === "Concluído"
+  ).length;
+
+  const technicalStatusLabel =
+    totalTechnicalChecklists === 0
+      ? "Sem escalas criadas"
+      : completedTechnicalChecklists === totalTechnicalChecklists
+      ? "Checklists prontos"
+      : `${completedTechnicalChecklists} de ${totalTechnicalChecklists} prontos`;
+
+  const allMembers = members;
 
   return (
     <div className="space-y-8">
@@ -132,8 +91,8 @@ export default async function DashboardPage() {
         <StatCard icon={ListMusic} label="Hinos definidos (semana)" value={songsDefinedThisWeek} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="kadosh-card flex items-center gap-4 p-4 lg:col-span-1">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="kadosh-card flex items-center gap-4 p-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-kadosh-fire/15 text-kadosh-fire">
             <Flame className="h-5 w-5" />
           </div>
@@ -142,20 +101,29 @@ export default async function DashboardPage() {
             <p className="text-xs text-kadosh-beige-mid/60">Status geral da semana</p>
           </div>
         </div>
-        <div className="kadosh-card flex items-center gap-4 p-4 lg:col-span-1">
+        <div className="kadosh-card flex items-center gap-4 p-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-kadosh-fire/15 text-kadosh-fire">
+            <Sliders className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-kadosh-beige-light">{technicalStatusLabel}</p>
+            <p className="text-xs text-kadosh-beige-mid/60">Técnica da Semana</p>
+          </div>
+        </div>
+        <div className="kadosh-card flex items-center gap-4 p-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-kadosh-fire/15 text-kadosh-fire">
             <CalendarCheck2 className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-kadosh-beige-light">
-              {latestSchedule ? (latestSchedule.worship_events as WorshipEvent)?.name : "Nenhuma escala criada"}
+            <p className="text-sm font-semibold text-kadosh-beige-light truncate max-w-[150px]">
+              {latestSchedule ? (latestSchedule.worship_events as WorshipEvent)?.name : "Nenhuma escala"}
             </p>
             <p className="text-xs text-kadosh-beige-mid/60">Última escala criada</p>
           </div>
         </div>
-        <div className="kadosh-card p-4 lg:col-span-1">
-          <p className="mb-2 text-sm font-semibold text-kadosh-beige-light">🎂 Próximos aniversariantes</p>
-          <div className="max-h-32 overflow-y-auto pr-1">
+        <div className="kadosh-card p-4">
+          <p className="mb-1 text-xs font-semibold text-kadosh-beige-light flex items-center gap-1">🎂 Aniversariantes</p>
+          <div className="max-h-20 overflow-y-auto pr-1">
             <BirthdayList members={allMembers} emptyLabel="Nenhum aniversário próximo." />
           </div>
         </div>

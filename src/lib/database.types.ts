@@ -56,6 +56,8 @@ export type PresenceStatus = "Pendente" | "Presente" | "Ausente";
 
 export type AutomationStatus = "Pendente" | "Enviado" | "Erro";
 
+export type ChecklistStatus = "Pendente" | "Em andamento" | "Concluído" | "Com problema";
+
 export interface Profile {
   id: string;
   full_name: string;
@@ -98,6 +100,7 @@ export interface Schedule {
   event_id: string;
   status: ScheduleStatus;
   general_notes: string | null;
+  technical_notes: string | null;
   whatsapp_message: string | null;
   n8n_sent: boolean;
   confirmation_requested: boolean;
@@ -163,6 +166,22 @@ export interface AppSetting {
   id: string;
   setting_key: string;
   setting_value: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TechnicalChecklist {
+  id: string;
+  schedule_id: string;
+  event_id: string;
+  sound_checked: boolean;
+  microphones_checked: boolean;
+  datashow_checked: boolean;
+  lyrics_ready: boolean;
+  playback_checked: boolean;
+  cables_checked: boolean;
+  notes: string | null;
+  status: ChecklistStatus;
   created_at: string;
   updated_at: string;
 }

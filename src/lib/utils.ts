@@ -171,6 +171,50 @@ export function buildScheduleMessage(data: ScheduleMessageData) {
   return lines.join("\n");
 }
 
+export interface TechnicalScheduleMessageData {
+  eventName: string;
+  dateLabel: string;
+  timeLabel: string;
+  soundTech?: string | null;
+  datashowTech?: string | null;
+  songs: ScheduleMessageSong[];
+  technicalNotes?: string | null;
+}
+
+export function buildTechnicalScheduleMessage(data: TechnicalScheduleMessageData) {
+  const lines: string[] = [];
+  lines.push(`🎚️ ESCALA TÉCNICA KADOSH — ${data.dateLabel}`);
+  lines.push("");
+  lines.push(`📍 Culto: ${data.eventName}`);
+  lines.push(`🕖 Horário: ${data.timeLabel}`);
+  lines.push("");
+  lines.push("🔊 Técnico de som:");
+  lines.push(data.soundTech ?? "—");
+  lines.push("");
+  lines.push("🖥️ Datashow:");
+  lines.push(data.datashowTech ?? "—");
+  lines.push("");
+  lines.push("🎵 Hinos do culto:");
+  lines.push("");
+  if (data.songs.length) {
+    data.songs
+      .sort((a, b) => a.order - b.order)
+      .forEach((s) => {
+        lines.push(`${s.order}. ${s.name}${s.keyTone ? ` — Tom: ${s.keyTone}` : ""}`);
+      });
+  } else {
+    lines.push("—");
+  }
+  lines.push("");
+  lines.push("⚠️ Observações técnicas:");
+  lines.push(data.technicalNotes?.trim() ? data.technicalNotes.trim() : "—");
+  lines.push("");
+  lines.push("Por favor, confirme sua presença na escala técnica. 🙌🔥");
+
+  return lines.join("\n");
+}
+
+
 export async function copyToClipboard(text: string) {
   await navigator.clipboard.writeText(text);
 }
